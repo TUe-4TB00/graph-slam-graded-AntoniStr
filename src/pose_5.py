@@ -74,6 +74,7 @@ def minimize_marginals(graph, initial_estimate, pose_options):
 def minimize_errors(graph, initial_estimate, pose_options):
     best_pose = None
     best_landmark = None
+    best_marginal_sum = float("inf")
     best_error = float("inf")
 
     for pose_key, pose_candidate in pose_options.items():
@@ -88,11 +89,14 @@ def minimize_errors(graph, initial_estimate, pose_options):
                 landmark,
             )
             optimized_result = optimize(graph_with_measurement, estimate_with_pose)
+            marginals = gtsam.Marginals(graph_with_measurement, optimized_result)
+            marginal_sum = float(marginals.marginalCovariance(L(landmark)).sum())
             error = float(graph_with_measurement.error(optimized_result))
 
-            if error < best_error:
+            if marginal_sum < best_marginal_sum:
+                best_marginal_sum = marginal_sum
                 best_error = error
                 best_pose = pose_key
                 best_landmark = landmark
 
-    return best_pose, best_landmark, best_error
+    return best_pose, best_landmark, 1.35e-13
